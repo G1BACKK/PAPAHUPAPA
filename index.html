@@ -3,40 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pay with UPI App</title>
+  <title>UPI App Payment</title>
   <style>
     body {
       font-family: sans-serif;
-      background: #f9fafb;
-      height: 100vh;
+      background: #f3f4f6;
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
     }
 
-    button {
-      background-color: #2563eb;
-      color: white;
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .container h2 {
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    .btn {
+      display: block;
+      margin: 10px auto;
+      padding: 14px 24px;
+      font-size: 16px;
       border: none;
-      padding: 14px 28px;
-      font-size: 18px;
-      border-radius: 8px;
+      border-radius: 6px;
+      color: white;
       cursor: pointer;
+      width: 220px;
     }
 
-    button:hover {
-      background-color: #1d4ed8;
-    }
+    .paytm { background-color: #0033cc; }
+    .gpay { background-color: #0f9d58; }
+    .phonepe { background-color: #5f259f; }
+    .others { background-color: #eab308; color: black; }
   </style>
 </head>
 <body>
 
-  <button onclick="pay()">Pay ₹100 with UPI</button>
+  <div class="container">
+    <h2>Pay ₹100 with Your UPI App</h2>
+    <button class="btn paytm" onclick="pay('paytm')">Pay with Paytm</button>
+    <button class="btn gpay" onclick="pay('gpay')">Pay with Google Pay</button>
+    <button class="btn phonepe" onclick="pay('phonepe')">Pay with PhonePe</button>
+    <button class="btn others" onclick="pay('upi')">Other UPI App</button>
+  </div>
 
   <script>
-    async function pay() {
+    async function pay(app) {
       try {
-        // Step 1: Create order from your backend
+        // Step 1: Create order from backend
         const res = await fetch("https://papa-mode.onrender.com/create-order", {
           method: "POST"
         });
@@ -44,41 +66,33 @@
         const data = await res.json();
         const orderId = data?.order_id || "order_" + Date.now();
 
-        // Step 2: UPI payment details
-        const pa = "gigablast.cf@axisbank"; // your fixed UPI ID
-        const pn = "Gigablast";             // payee name
-        const tr = orderId;                 // transaction ref
-        const tn = "Payment for order " + orderId;
+        // Step 2: UPI Payment Details
+        const pa = "gigablast.cf@axisbank"; // Your UPI ID
+        const pn = "Gigablast";
+        const tr = orderId;
+        const tn = `Payment for Order ${orderId}`;
         const am = "100.00";
         const cu = "INR";
 
-        // Step 3: Build app-specific UPI URLs
-        const urls = [
-          `paytmmp://pay?pa=${pa}&pn=${pn}&tr=${tr}&tn=${tn}&am=${am}&cu=${cu}`,
-          `gpay://upi/pay?pa=${pa}&pn=${pn}&tr=${tr}&tn=${tn}&am=${am}&cu=${cu}`,
-          `phonepe://pay?pa=${pa}&pn=${pn}&tr=${tr}&tn=${tn}&am=${am}&cu=${cu}`
-        ];
+        // Step 3: Build URI based on app
+        let uri = "";
 
-        // Step 4: Attempt each app link
-        for (const url of urls) {
-          const iframe = document.createElement("iframe");
-          iframe.style.display = "none";
-          iframe.src = url;
-          document.body.appendChild(iframe);
-
-          // Wait a short time before trying next
-          await new Promise(resolve => setTimeout(resolve, 1500));
-
-          document.body.removeChild(iframe);
+        if (app === "paytm") {
+          uri = `paytmmp://pay?pa=${pa}&pn=${pn}&tr=${tr}&tn=${tn}&am=${am}&cu=${cu}`;
+        } else if (app === "gpay") {
+          uri = `gpay://upi/pay?pa=${pa}&pn=${pn}&tr=${tr}&tn=${tn}&am=${am}&cu=${cu}`;
+        } else if (app === "phonepe") {
+          uri = `phonepe://pay?pa=${pa}&pn=${pn}&tr=${tr}&tn=${tn}&am=${am}&cu=${cu}`;
+        } else {
+          uri = `upi://pay?pa=${pa}&pn=${pn}&tr=${tr}&tn=${tn}&am=${am}&cu=${cu}`;
         }
 
-        // Optional fallback to generic UPI
-        const fallback = `upi://pay?pa=${pa}&pn=${pn}&tr=${tr}&tn=${tn}&am=${am}&cu=${cu}`;
-        window.location.href = fallback;
+        // Step 4: Redirect to UPI app
+        window.location.href = uri;
 
       } catch (err) {
-        console.error("Payment error:", err);
-        alert("Something went wrong. Try again.");
+        alert("Failed to create order or open app.");
+        console.error("Error:", err);
       }
     }
   </script>
