@@ -2,37 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Buy Product</title>
+  <title>Pay via PhonePe</title>
 </head>
 <body>
-  <h2>Buy Product for ₹100</h2>
-  <button onclick="payNow()">Buy Now</button>
-
-  <!-- Load Cashfree SDK -->
-  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <h2>Pay ₹100 via PhonePe</h2>
+  <button onclick="payViaPhonePe()">Pay Now</button>
 
   <script>
-    async function payNow() {
+    async function payViaPhonePe() {
       try {
+        // Step 1: Create the order (same backend you provided)
         const response = await fetch("https://papa-mode.onrender.com/create-order", {
           method: "POST"
         });
 
         if (!response.ok) {
-          throw new Error("Failed to create order");
+          throw new Error("Order creation failed");
         }
 
         const data = await response.json();
 
-        const cashfree = Cashfree({ mode: "production" }); // use "sandbox" for test
+        // Step 2: Build UPI intent link manually (not tracked by Cashfree)
+        const upiLink = `upi://pay?pa=gigablast.cf@axisbank&pn=Gigablast&am=100.00&cu=INR&tn=Cashfree+Order+${Date.now()}`;
 
-        cashfree.checkout({
-          paymentSessionId: data.payment_session_id,
-          redirectTarget: "_self"
-        });
+        // Step 3: Redirect to UPI app (PhonePe, GPay, etc.)
+        window.location.href = upiLink;
       } catch (err) {
         console.error("Error:", err);
-        alert("Payment failed. Try again.");
+        alert("Payment failed. Please try again.");
       }
     }
   </script>
