@@ -2,112 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UPI App Detection</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pay with UPI</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #f3f4f6;
+    }
+
+    button {
+      background: #4f46e5;
+      color: white;
+      padding: 14px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #4338ca;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-  <div id="app" class="w-full max-w-md p-6 bg-white rounded-xl shadow-md relative">
-    <h1 class="text-xl font-bold mb-4 text-center text-gray-800 uppercase">Pay with UPI</h1>
-    
-    <div class="grid grid-cols-2 gap-4 mb-6">
-      <button @click="launch('paytm')" class="bg-blue-600 hover:bg-blue-700 p-3 rounded text-white font-semibold">PayTM</button>
-      <button @click="launch('gpay')" class="bg-green-600 hover:bg-green-700 p-3 rounded text-white font-semibold">GPay</button>
-      <button @click="launch('phonepe')" class="bg-indigo-600 hover:bg-indigo-700 p-3 rounded text-white font-semibold">PhonePe</button>
-      <button @click="launch('others')" class="bg-orange-600 hover:bg-orange-700 p-3 rounded text-white font-semibold">Others</button>
-    </div>
+<body>
 
-    <ul class="text-sm text-gray-700 max-h-64 overflow-y-auto space-y-1">
-      <li v-for="(log, index) in logs" :key="index">{{ log.what }} at {{ log.when }}</li>
-    </ul>
-
-    <canvas id="confetti-canvas" class="absolute inset-0 pointer-events-none"></canvas>
-  </div>
-
-  <!-- Confetti -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <button onclick="payWithUPI()">Pay ₹100 with UPI</button>
 
   <script>
-    const { createApp, ref } = Vue;
+    async function payWithUPI() {
+      try {
+        // Create order from your backend (optional if not tracking)
+        const res = await fetch("https://papa-mode.onrender.com/create-order", { method: "POST" });
+        const data = await res.json();
+        const orderId = data?.order_id || "order_" + Date.now();
 
-    createApp({
-      setup() {
-        const logs = ref([]);
-        let lastFocus = 0;
-        let lastBlur = 0;
+        // UPI payment details
+        const upiId = "gigablast.cf@axisbank";
+        const name = "Gigablast";
+        const amount = "100.00";
+        const note = "Order " + orderId;
 
-        function getCurrentTime() {
-          const now = new Date();
-          return now.toLocaleTimeString() + ':' + now.getMilliseconds();
-        }
+        // Build UPI intent URI
+        const uri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
 
-        function recordEvent(what) {
-          logs.value.push({ what, when: getCurrentTime() });
-        }
+        // Redirect to UPI app (only works on mobile)
+        window.location.href = uri;
 
-        function triggerConfetti() {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
-        }
-
-        async function launch(app) {
-          try {
-            recordEvent("Creating Cashfree order...");
-
-            const res = await fetch("https://papa-mode.onrender.com/create-order", {
-              method: "POST"
-            });
-
-            if (!res.ok) throw new Error("Order creation failed");
-
-            const data = await res.json();
-            const orderId = data?.order_id || `order_${Date.now()}`;
-
-            recordEvent(`Order created: ${orderId}`);
-
-            // Your original fixed UPI ID
-            const upiId = "gigablast.cf@axisbank";
-            const payeeName = "Gigablast";
-            const amount = "100.00"; // Change amount if needed
-            const txnNote = `Cashfree Order ${orderId}`;
-
-            // Build generic UPI intent URI
-            const uri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(txnNote)}`;
-
-            lastFocus = 0;
-            lastBlur = 0;
-            window.open(uri, "_self");
-
-          } catch (err) {
-            console.error("Error:", err);
-            alert("Failed to create order or open UPI app.");
-          }
-        }
-
-        window.addEventListener("focus", () => {
-          lastFocus = Date.now();
-        });
-
-        window.addEventListener("blur", () => {
-          lastBlur = Date.now();
-          if (lastFocus !== 0 && lastBlur - lastFocus < 2000) {
-            recordEvent("✅ UPI App Opened");
-            triggerConfetti();
-          } else {
-            recordEvent("❌ UPI App Not Opened");
-          }
-        });
-
-        return {
-          logs,
-          launch
-        };
+      } catch (err) {
+        alert("Something went wrong. Try again.");
+        console.error(err);
       }
-    }).mount("#app");
+    }
   </script>
+
 </body>
 </html>
